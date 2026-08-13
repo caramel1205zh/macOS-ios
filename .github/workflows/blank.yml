@@ -1,7 +1,7 @@
 name: Generate macOS Tahoe ISO
 
 on:
-  workflow_dispatch: # 保留手动触发
+  workflow_dispatch:
 
 run-name: Generate macOS Tahoe v26.6.1 ISO
 
@@ -11,13 +11,17 @@ env:
 
 jobs:
   build:
-    # 建议使用具体的 macOS 版本，macOS 26 对应 macos-26 镜像
+    # 使用支持 macOS 26 的运行器
     runs-on: macos-latest
     steps:
       # Download Installer
       - name: Download macOS Installer
         run: |
-          sudo /System/Library/PrivateFrameworks/Seeding.framework/Versions/A/Resources/seedutil enroll PublicSeed
+          # 替换原有的 seedutil 命令，直接写入 Beta 计划配置文件
+          sudo touch /System/Library/PrivateFrameworks/Seeding.framework/Versions/A/Resources/BetaProgram.plist
+          sudo defaults write /System/Library/PrivateFrameworks/Seeding.framework/Versions/A/Resources/BetaProgram.plist ProgramName -string "PublicSeed"
+          
+          # 列出并下载指定版本的完整安装包
           softwareupdate --list-full-installers
           softwareupdate --fetch-full-installer --full-installer-version ${{ env.installer_version }}
 
