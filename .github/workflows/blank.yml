@@ -11,17 +11,19 @@ env:
 
 jobs:
   build:
-    # 使用支持 macOS 26 的运行器
-    runs-on: macos-latest
+    runs-on: macos-26
     steps:
       # Download Installer
       - name: Download macOS Installer
         run: |
-          # 替换原有的 seedutil 命令，直接写入 Beta 计划配置文件
-          sudo touch /System/Library/PrivateFrameworks/Seeding.framework/Versions/A/Resources/BetaProgram.plist
-          sudo defaults write /System/Library/PrivateFrameworks/Seeding.framework/Versions/A/Resources/BetaProgram.plist ProgramName -string "PublicSeed"
+          # 1. 在可写的数据目录创建 BetaProgram.plist 并写入配置
+          sudo mkdir -p /System/Volumes/Data/private/tmp/beta_config
+          sudo defaults write /System/Volumes/Data/private/tmp/beta_config/BetaProgram.plist ProgramName -string "PublicSeed"
           
-          # 列出并下载指定版本的完整安装包
+          # 2. 创建软链接，让系统能从只读的系统目录中读取到配置文件
+          sudo ln -sf /System/Volumes/Data/private/tmp/beta_config/BetaProgram.plist /System/Library/PrivateFrameworks/Seeding.framework/Versions/A/Resources/BetaProgram.plist
+          
+          # 3. 列出并下载指定版本的完整安装包
           softwareupdate --list-full-installers
           softwareupdate --fetch-full-installer --full-installer-version ${{ env.installer_version }}
 
@@ -41,7 +43,7 @@ jobs:
 
       # Upload ISO
       - name: Upload ISO
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
           name: macOS ${{ env.installer_name }} ${{ env.installer_version }} ISO
           path: ~/Desktop/${{ env.installer_name }}.iso
