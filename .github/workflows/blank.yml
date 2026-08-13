@@ -1,108 +1,39 @@
-name: Build macOS Tahoe 26.6.1 ISO
+name: Generate macOS Tahoe ISO
 
 on:
   workflow_dispatch:
 
+run-name: Generate macOS Tahoe 26.6.1 ISO
+
+env:
+  installer_version: "26.6.1"
+  installer_name: "Tahoe"
+
 jobs:
   build:
-    name: Build macOS Tahoe 26.6.1 ISO
     runs-on: macos-15-intel
 
-    env:
-      MACOS_VERSION: "26.6.1"
-      ISO_NAME: "macOS_Tahoe_26.6.1.iso"
-
     steps:
-      - name: Show runner information
+      - name: Download macOS Installer
         run: |
-          set -euxo pipefail
-
-          sw_vers
-          uname -a
-          uname -m
-
-          echo "Available full installers:"
           softwareupdate --list-full-installers
+          softwareupdate --fetch-full-installer --full-installer-version ${{ env.installer_version }}
 
-      - name: Download macOS Tahoe 26.6.1
+      - name: Generate macOS ISO Installer
         run: |
-          set -euxo pipefail
-
-          sudo softwareupdate \
-            --fetch-full-installer \
-            --full-installer-version "${MACOS_VERSION}"
-
-      - name: Verify macOS installer
-        run: |
-          set -euxo pipefail
-
-          INSTALLER="/Applications/Install macOS Tahoe.app"
-
-          if [ ! -d "${INSTALLER}" ]; then
-            echo "ERROR: macOS installer not found"
-            ls -lah /Applications/
-            exit 1
-          fi
-
-          echo "Installer found:"
-          du -sh "${INSTALLER}"
-          ls -lah "${INSTALLER}"
-
-      - name: Create bootable installer
-        run: |
-          set -euxo pipefail
-
-          INSTALLER="/Applications/Install macOS Tahoe.app"
-          WORKDIR="${RUNNER_TEMP}/macos-iso"
-          DMG="${WORKDIR}/InstallMedia.dmg"
-
-          mkdir -p "${WORKDIR}"
-
-          echo "Creating bootable installer..."
-
-          "${INSTALLER}/Contents/Resources/createinstallmedia" \
-            --volume "${DMG}" \
-            --nointeraction
-
-      - name: Convert DMG to ISO
-        run: |
-          set -euxo pipefail
-
-          WORKDIR="${RUNNER_TEMP}/macos-iso"
-          DMG="${WORKDIR}/InstallMedia.dmg"
-          ISO="${WORKDIR}/${ISO_NAME}"
-
-          echo "Converting DMG to ISO..."
-
-          hdiutil convert \
-            "${DMG}" \
-            -format UDTO \
-            -o "${WORKDIR}/macOS_Tahoe_26.6.1"
-
-          mv \
-            "${WORKDIR}/macOS_Tahoe_26.6.1.cdr" \
-            "${ISO}"
-
-          echo "ISO created:"
-          ls -lh "${ISO}"
-
-      - name: Verify ISO
-        run: |
-          set -euxo pipefail
-
-          ISO="${RUNNER_TEMP}/macos-iso/${ISO_NAME}"
-
-          echo "ISO information:"
-          hdiutil imageinfo "${ISO}"
-
-          echo
-          echo "SHA256:"
-          shasum -a 256 "${ISO}"
+          sudo hdiutil create -o /tmp/'${{ env.installer_name }}' -size 16800m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
+          sudo hdiutil attach /tmp/'${{ env.installer_name }}'.dmg -noverify -mountpoint /Volumes/'${{ env.installer_name }}'
+          sleep 20
+          sudo /Applications/'Install macOS ${{ env.installer_name }}'.app/Contents/Resources/createinstallmedia --volume /Volumes/'${{ env.installer_name }}' --nointeraction
+          echo "Sleeping 100 to allow the installer to finish"
+          sleep 100
+          hdiutil eject -force /Volumes/'${{ env.installer_name }}'
+          hdiutil convert /tmp/'${{ env.installer_name }}'.dmg -format UDTO -o ~/Desktop/'${{ env.installer_name }}'
+          mv -v ~/Desktop/'${{ env.installer_name }}'.cdr ~/Desktop/'${{ env.installer_name }}'.iso
+          sudo rm -fv /tmp/'${{ env.installer_name }}'.dmg
 
       - name: Upload ISO
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@7
         with:
           name: macOS-Tahoe-26.6.1-ISO
-          path: ${{ runner.temp }}/macos-iso/macOS_Tahoe_26.6.1.iso
-          compression-level: 0
-          retention-days: 7
+          path: "~/Desktop/${{ env.installer_name }}.iso"
