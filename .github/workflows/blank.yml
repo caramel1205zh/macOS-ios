@@ -24,7 +24,7 @@ jobs:
           sudo hdiutil create -o /tmp/'${{ env.installer_name }}' -size 22000m -volname '${{ env.installer_name }}' -layout SPUD -fs HFS+J
           sudo hdiutil attach /tmp/'${{ env.installer_name }}'.dmg -noverify -mountpoint /Volumes/'${{ env.installer_name }}'
           sudo /Applications/'Install macOS ${{ env.installer_name }}'.app/Contents/Resources/createinstallmedia --volume /Volumes/'${{ env.installer_name }}' --nointeraction
-          hdiutil eject -force /Volumes/'${{ env.installer_name }}'
+          hdiutil eject -force "/Volumes/Install macOS ${{ env.installer_name }}"
           hdiutil convert /tmp/'${{ env.installer_name }}'.dmg -format UDTO -o ~/Desktop/'${{ env.installer_name }}'
           mv ~/Desktop/'${{ env.installer_name }}'.cdr ~/Desktop/'${{ env.installer_name }}'.iso
           sudo rm -f /tmp/'${{ env.installer_name }}'.dmg
