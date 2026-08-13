@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     name: Build macOS Tahoe 26.6.1 ISO
-    runs-on: macos-latest
+    runs-on: macos-15-intel
 
     env:
       MACOS_VERSION: "26.6.1"
