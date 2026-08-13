@@ -100,7 +100,7 @@ jobs:
           shasum -a 256 "${ISO}"
 
       - name: Upload ISO
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: macOS-Tahoe-26.6.1-ISO
           path: ${{ runner.temp }}/macos-iso/macOS_Tahoe_26.6.1.iso
