@@ -33,7 +33,7 @@ jobs:
           sudo rm -fv /tmp/'${{ env.installer_name }}'.dmg
 
       - name: Upload ISO
-        uses: actions/upload-artifact@7
+        uses: actions/upload-artifact@v7
         with:
           name: macOS-Tahoe-26.6.1-ISO
           path: "~/Desktop/${{ env.installer_name }}.iso"
