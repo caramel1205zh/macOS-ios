@@ -1,0 +1,53 @@
+name: Build KernelSU Whiteout Module
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create module
+        run: |
+          set -e
+
+          mkdir -p module/system/product/priv-app
+
+          cat > module/module.prop <<'EOF'
+          id=remove-weatherpixel
+          name=Remove WeatherPixelPrebuilt
+          version=1.0
+          versionCode=1
+          author=forgezhzh
+          description=Whiteout WeatherPixelPrebuilt_10006113
+          EOF
+
+          sudo mknod \
+            module/system/product/priv-app/WeatherPixelPrebuilt_10006113 \
+            c 0 0
+
+          sudo chown root:root \
+            module/system/product/priv-app/WeatherPixelPrebuilt_10006113
+
+      - name: Verify whiteout
+        run: |
+          ls -l module/system/product/priv-app/
+          stat module/system/product/priv-app/WeatherPixelPrebuilt_10006113
+
+      - name: Build ZIP
+        run: |
+          cd module
+
+          sudo zip -r9 ../remove-weatherpixel.zip .
+
+          cd ..
+
+          echo "=== ZIP contents ==="
+          unzip -l remove-weatherpixel.zip
+
+      - name: Upload KernelSU module
+        uses: actions/upload-artifact@v7
+        with:
+          name: remove-weatherpixel
+          path: remove-weatherpixel.zip
